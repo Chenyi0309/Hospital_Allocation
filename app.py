@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import pyomo.environ as pyo 
+import pyomo.environ as pyo
 
 # Set up the Streamlit page
 st.set_page_config(page_title="ICU Allocation Dashboard", layout="wide")
@@ -133,24 +133,27 @@ if simulate_button:
     sim_model.capacity_limit = pyo.Constraint(expr=sum(sim_model.x[g] for g in sim_model.GROUPS) <= total_patients)
 
     solver = pyo.SolverFactory("cbc")
-    results = solver.solve(sim_model, tee=False)
+    if not solver.available():
+        st.error("❌ CBC solver not available in current environment.")
+    else:
+        results = solver.solve(sim_model, tee=False)
 
-    st.success("✅ Optimization complete.")
-    sim_results = {g: pyo.value(sim_model.x[g]) for g in sim_model.GROUPS}
-    result_df = pd.DataFrame({
-        "Group": list(sim_results.keys()),
-        "Allocated": list(sim_results.values()),
-        "Demand": [demand_dist[g] for g in sim_model.GROUPS],
-        "Unmet": [demand_dist[g] - sim_results[g] for g in sim_model.GROUPS]
-    })
+        st.success("✅ Optimization complete.")
+        sim_results = {g: pyo.value(sim_model.x[g]) for g in sim_model.GROUPS}
+        result_df = pd.DataFrame({
+            "Group": list(sim_results.keys()),
+            "Allocated": list(sim_results.values()),
+            "Demand": [demand_dist[g] for g in sim_model.GROUPS],
+            "Unmet": [demand_dist[g] - sim_results[g] for g in sim_model.GROUPS]
+        })
 
-    st.dataframe(result_df.style.format("{:.1f}"))
+        st.dataframe(result_df.style.format("{:.1f}"))
 
-    fig2, ax2 = plt.subplots()
-    ax2.bar(result_df["Group"], result_df["Demand"], label="Demand", alpha=0.6)
-    ax2.bar(result_df["Group"], result_df["Allocated"], label="Allocated", alpha=0.8)
-    ax2.set_ylabel("Beds")
-    ax2.set_title("Simulated ICU Allocation vs Demand")
-    ax2.legend()
-    st.pyplot(fig2)
+        fig2, ax2 = plt.subplots()
+        ax2.bar(result_df["Group"], result_df["Demand"], label="Demand", alpha=0.6)
+        ax2.bar(result_df["Group"], result_df["Allocated"], label="Allocated", alpha=0.8)
+        ax2.set_ylabel("Beds")
+        ax2.set_title("Simulated ICU Allocation vs Demand")
+        ax2.legend()
+        st.pyplot(fig2)
 
