@@ -132,7 +132,7 @@ if simulate_button:
     # Constraint: total allocation must be less than hospital system capacity
     sim_model.capacity_limit = pyo.Constraint(expr=sum(sim_model.x[g] for g in sim_model.GROUPS) <= total_patients)
 
-    solver = pyo.SolverFactory("glpk")
+    solver = pyo.SolverFactory("cbc")
     results = solver.solve(sim_model, tee=False)
 
     st.success("✅ Optimization complete.")
