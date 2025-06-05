@@ -148,8 +148,9 @@ if simulate_button:
             "Demand": [demand_dist[g] for g in sim_model.GROUPS],
             "Unmet": [demand_dist[g] - sim_results[g] for g in sim_model.GROUPS]
         })
+        
+        st.dataframe(result_df.round(1))  # ✅ 更兼容
 
-        st.dataframe(result_df.style.format("{:.1f}"))
 
         fig2, ax2 = plt.subplots()
         ax2.bar(result_df["Group"], result_df["Demand"], label="Demand", alpha=0.6)
