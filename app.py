@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pyomo.environ as pyo
+import os
 
 # Set up the Streamlit page
 st.set_page_config(page_title="ICU Allocation Dashboard", layout="wide")
@@ -132,9 +133,10 @@ if simulate_button:
     # Constraint: total allocation must be less than hospital system capacity
     sim_model.capacity_limit = pyo.Constraint(expr=sum(sim_model.x[g] for g in sim_model.GROUPS) <= total_patients)
 
-    solver = pyo.SolverFactory("cbc")
+    # Use GLPK solver (works on Streamlit Cloud)
+    solver = pyo.SolverFactory("glpk")
     if not solver.available():
-        st.error("❌ CBC solver not available in current environment.")
+        st.error("❌ GLPK solver not available in current environment.")
     else:
         results = solver.solve(sim_model, tee=False)
 
@@ -156,4 +158,3 @@ if simulate_button:
         ax2.set_title("Simulated ICU Allocation vs Demand")
         ax2.legend()
         st.pyplot(fig2)
-
