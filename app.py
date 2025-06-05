@@ -7,7 +7,7 @@ import os
 
 # Set up the Streamlit page
 st.set_page_config(page_title="ICU Allocation Dashboard", layout="wide")
-st.title("🏥 Hospital ICU Bed Allocation Optimizer")
+st.title("\U0001F3E5 Hospital ICU Bed Allocation Optimizer")
 st.markdown("""
 This dashboard visualizes the **optimized ICU bed allocation** based on actual COVID demand
 and hospital capacity. You can also simulate your own demand scenarios below.
@@ -38,7 +38,7 @@ if "urban_status" in df.columns:
 df = df[df["state"].isin(selected_states)]
 
 # Summary section
-st.subheader("📊 Summary Statistics")
+st.subheader("\U0001F4CA Summary Statistics")
 col1, col2, col3 = st.columns(3)
 col1.metric("Total ICU Demand", f"{df['staffed_icu_adult_patients_confirmed_covid_7_day_avg'].sum():,.0f}")
 col2.metric("Total ICU Allocated", f"{df['icu_allocated'].sum():,.0f}")
@@ -55,7 +55,7 @@ if "urban_status" in df.columns:
 
 # Plotting section
 st.markdown("### ICU Allocation vs. COVID Demand")
-fig, ax = plt.subplots(figsize=(10, 6))
+fig, ax = plt.subplots(figsize=(8, 5))
 sns.scatterplot(
     data=df,
     x="staffed_icu_adult_patients_confirmed_covid_7_day_avg",
@@ -81,7 +81,7 @@ st.dataframe(df.sort_values("shortage", ascending=False).reset_index(drop=True))
 
 # Download link
 st.download_button(
-    label="💾 Download Optimized CSV",
+    label="\U0001F4BE Download Optimized CSV",
     data=df.to_csv(index=False).encode('utf-8'),
     file_name='hospital_optimized_allocation_filtered.csv',
     mime='text/csv'
@@ -91,19 +91,19 @@ st.download_button(
 # Simulation Section
 # ------------------------------
 st.markdown("---")
-st.subheader("🧪 Simulate ICU Demand by Severity")
+st.subheader("\U0001F9EA Simulate ICU Demand by Severity")
 
 with st.form("simulate_form"):
     total_patients = st.slider("Projected Total ICU COVID Patients:", min_value=10, max_value=500, value=100)
     col1, col2, col3 = st.columns(3)
     perc_moderate = col1.number_input("% Moderate", min_value=0.0, max_value=100.0, value=30.0)
-    perc_severe = col2.number_input("% Severe", min_value=0.0, max_value=100.0, value=40.0)
-    perc_critical = col3.number_input("% Critical", min_value=0.0, max_value=100.0, value=30.0)
+    perc_severe = col2.number_input("% Severe", min_value=0.0, max_value=100.0, value=30.0)
+    perc_critical = col3.number_input("% Critical", min_value=0.0, max_value=100.0, value=40.0)
 
     col4, col5, col6 = st.columns(3)
     weight_moderate = col4.number_input("Priority Weight: Moderate", value=1.0)
-    weight_severe = col5.number_input("Priority Weight: Severe", value=2.0)
-    weight_critical = col6.number_input("Priority Weight: Critical", value=3.0)
+    weight_severe = col5.number_input("Priority Weight: Severe", value=3.0)
+    weight_critical = col6.number_input("Priority Weight: Critical", value=2.0)
 
     simulate_button = st.form_submit_button("Run Simulation")
 
@@ -133,14 +133,14 @@ if simulate_button:
     # Constraint: total allocation must be less than hospital system capacity
     sim_model.capacity_limit = pyo.Constraint(expr=sum(sim_model.x[g] for g in sim_model.GROUPS) <= total_patients)
 
-    # Use GLPK solver (works on Streamlit Cloud)
+    # Use GLPK solver
     solver = pyo.SolverFactory("glpk")
     if not solver.available():
         st.error("❌ GLPK solver not available in current environment.")
     else:
         results = solver.solve(sim_model, tee=False)
-
         st.success("✅ Optimization complete.")
+
         sim_results = {g: pyo.value(sim_model.x[g]) for g in sim_model.GROUPS}
         result_df = pd.DataFrame({
             "Group": list(sim_results.keys()),
@@ -148,11 +148,10 @@ if simulate_button:
             "Demand": [demand_dist[g] for g in sim_model.GROUPS],
             "Unmet": [demand_dist[g] - sim_results[g] for g in sim_model.GROUPS]
         })
-        
-        st.dataframe(result_df.round(1))  # ✅ 更兼容
 
+        st.dataframe(result_df)
 
-        fig2, ax2 = plt.subplots()
+        fig2, ax2 = plt.subplots(figsize=(6, 4))
         ax2.bar(result_df["Group"], result_df["Demand"], label="Demand", alpha=0.6)
         ax2.bar(result_df["Group"], result_df["Allocated"], label="Allocated", alpha=0.8)
         ax2.set_ylabel("Beds")
